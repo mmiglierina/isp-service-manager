@@ -1,6 +1,10 @@
 # =========================
 # Backend FastAPI / Python
 
+# Pychamp
+/.idea/*
+/backend-isp/.idea/*
+
 # Variables de entorno
 backend-isp/.env
 backend-isp/.env.*
