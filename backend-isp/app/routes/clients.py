@@ -1,13 +1,15 @@
-from fastapi import APIRouter, UploadFile, File, Form, status
-from app.schemas.procedure import CreatedResponse, ProcedureStatus
-from app.services.file_manager import validate_and_save_file
-import uuid
+from fastapi import APIRouter, UploadFile, File, Form, status, Depends, HTTPException
+from sqlalchemy.orm import Session
 from uuid import UUID
-from typing import Optional
-from datetime import datetime
-from app.internal.mock_db import add_tramite
+import uuid
 
-router = APIRouter(prefix="/procedure", tags=["Clientes"])
+from app.schemas.procedure import CreatedResponse
+from app.services.file_manager import validate_and_save_file
+
+from app.internal.database import get_db
+from app.internal.models import Tramite, TipoTramite, EstadoTramite
+
+router = APIRouter(prefix="/tramite", tags=["Clientes"])
 
 @router.post("/alta", response_model=CreatedResponse, status_code=status.HTTP_201_CREATED)
 async def create_activation(
@@ -16,33 +18,36 @@ async def create_activation(
         dni: str = Form(...),
         email: str = Form(...),
         adjuntoDni: UploadFile = File(...),
-        adjuntoImpuesto: UploadFile = File(...)
+        adjuntoImpuesto: UploadFile = File(...),
+        db: Session = Depends(get_db)
 ):
-    # Process files using our secure service
+    # Procesar y validar archivos con tu servicio seguro
     path_dni = validate_and_save_file(adjuntoDni, "dni")
     path_impuesto = validate_and_save_file(adjuntoImpuesto, "taxes")
 
-    # Generamos el ID único
-    generated_uuid = str(uuid.uuid4())
+    # Generamos el UUID string compatible con la columna de la BD
+    generated_uuid = uuid.uuid4()
 
-    nuevo_tramite = {
-        "uuid": generated_uuid,
-        "dni": dni,
-        "nombre": nombre,
-        "apellido": apellido,
-        "email": email,
-        "type": "ALTA",
-        "status": "en_curso",
-        "created_at": datetime.now(),
-        "archivos": [path_dni, path_impuesto]
-    }
+    # Creamos el registro usando el modelo ORM de SQLAlchemy
+    nuevo_tramite = Tramite(
+        uuid=generated_uuid,
+        tipo=TipoTramite.ALTA,
+        dni=dni,
+        nombre=nombre,
+        apellido=apellido,
+        email=email,
+        url_dni=path_dni,
+        url_impuesto=path_impuesto,
+        estado=EstadoTramite.en_curso
+    )
 
-    # 3. Lo guardamos en la lista global (Memoria)
-    add_tramite(nuevo_tramite)
+    # Impactamos en la base de datos real
+    db.add(nuevo_tramite)
+    db.commit()
 
     return {
         "uuid": generated_uuid,
-        "message": "Activation process initiated. Files uploaded successfully."
+        "mensaje": "Alta iniciada correctamente."
     }
 
 @router.post("/baja", response_model=CreatedResponse, status_code=status.HTTP_201_CREATED)
@@ -50,40 +55,48 @@ async def create_deactivation(
         dni: str = Form(...),
         nroServicio: str = Form(...),
         adjuntoDni: UploadFile = File(...),
-        adjuntoFactura: UploadFile = File(...)
+        adjuntoFactura: UploadFile = File(...),
+        db: Session = Depends(get_db)  # <-- Inyección de la Base de Datos
 ):
-    # Validation and saving of files using our secure service
-    # This addresses QA standards for integrity and security
+    # Procesamiento seguro de los adjuntos para la baja
     path_dni = validate_and_save_file(adjuntoDni, "deactivation_dni")
     path_invoice = validate_and_save_file(adjuntoFactura, "deactivation_invoice")
 
-    # TODO: In a real-world scenario, you would save these details in a database
     generated_uuid = uuid.uuid4()
+
+    # Construimos la entidad mapeando los campos nulos correspondientes a BAJA
+    nuevo_tramite = Tramite(
+        uuid=generated_uuid,
+        tipo=TipoTramite.BAJA,
+        dni=dni,
+        nro_servicio=nroServicio,
+        url_dni=path_dni,
+        url_factura=path_invoice,
+        estado=EstadoTramite.en_curso
+    )
+
+    db.add(nuevo_tramite)
+    db.commit()
 
     return {
         "uuid": generated_uuid,
-        "message": "Deactivation process initiated. Files processed successfully."
+        "mensaje": "Baja iniciada correctamente."
     }
-
-# Mock data for demonstration purposes (QA standard: testing with structured data)
-# In a real project, this data would come from your database
-MOCK_PROCEDURES = {
-    "d0e12345-e89b-12d3-a456-426614174000": {
-        "status": ProcedureStatus.in_progress,
-        "observations": "Documents received and under review by the ISP team."
-    }
-}
 
 @router.get("/{uuid}", status_code=status.HTTP_200_OK)
-async def get_procedure_status(uuid: UUID):
-    # Search for the procedure in our data source
-    procedure_id = str(uuid)
+async def get_procedure_status(uuid: UUID, db: Session = Depends(get_db)):
+    # Buscamos el trámite directamente en la base de datos por su clave primaria (UUID)
+    tramite = db.query(Tramite).filter(Tramite.uuid == str(uuid)).first()
 
-    if procedure_id not in MOCK_PROCEDURES:
-        # Standard QA practice: Return 404 if the resource is not found as per Swagger
+    # Si no existe en la base de datos, disparamos el error 404 estandarizado
+    if not tramite:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Procedure not found with the provided UUID."
+            detail="No se encontró el trámite buscado con el UUID proporcionado."
         )
 
-    return MOCK_PROCEDURES[procedure_id]
+    # Devolvemos la estructura exacta que pide el Swagger para el cliente
+    return {
+        "estado": tramite.estado.value,
+        "observaciones": tramite.observaciones
+    }
