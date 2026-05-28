@@ -1,6 +1,9 @@
 # =========================
 # Backend FastAPI / Python
 
+# Images
+uploads/*
+
 # Pychamp
 /.idea/*
 /backend-isp/.idea/*
