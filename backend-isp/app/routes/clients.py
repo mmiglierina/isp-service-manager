@@ -21,6 +21,18 @@ async def create_activation(
         adjuntoImpuesto: UploadFile = File(...),
         db: Session = Depends(get_db)
 ):
+    # Regla 1: Verificar si ya tiene un trámite activo (en_curso)
+    tramite_activo = db.query(Tramite).filter(
+        Tramite.dni == dni,
+        Tramite.estado == EstadoTramite.en_curso
+    ).first()
+
+    if tramite_activo:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Ya existe un trámite en curso para el DNI {dni}. Debe esperar a que finalice."
+        )
+
     # Procesar y validar archivos con tu servicio seguro
     path_dni = validate_and_save_file(adjuntoDni, "dni")
     path_impuesto = validate_and_save_file(adjuntoImpuesto, "taxes")
@@ -57,8 +69,19 @@ async def create_deactivation(
         adjuntoFactura: UploadFile = File(...),
         db: Session = Depends(get_db)
 ):
-    # 🔍 FILTRO / VALIDACIÓN DE NEGOCIO:
-    # Verificamos si existe un trámite de ALTA para este DNI que esté COMPLETADO
+    # Regla 1: Verificar si ya tiene un trámite activo en curso
+    tramite_activo = db.query(Tramite).filter(
+        Tramite.dni == dni,
+        Tramite.estado == EstadoTramite.en_curso
+    ).first()
+
+    if tramite_activo:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Ya existe un trámite en curso para el DNI {dni}. Debe esperar a que finalice."
+        )
+
+    # Regla 2: Verificamos si existe un trámite de ALTA para este DNI que esté COMPLETADO
     alta_existente = db.query(Tramite).filter(
         Tramite.dni == dni,
         Tramite.tipo == TipoTramite.ALTA,
@@ -80,7 +103,7 @@ async def create_deactivation(
 
     # Construimos la entidad mapeando el DNI al trámite
     nuevo_tramite = Tramite(
-        uuid=str(generated_uuid),
+        uuid=generated_uuid,
         tipo=TipoTramite.BAJA,
         dni=dni,
         url_dni=path_dni,
@@ -99,7 +122,7 @@ async def create_deactivation(
 @router.get("/{uuid}", status_code=status.HTTP_200_OK)
 async def get_procedure_status(uuid: UUID, db: Session = Depends(get_db)):
     # Buscamos el trámite directamente en la base de datos por su clave primaria (UUID)
-    tramite = db.query(Tramite).filter(Tramite.uuid == str(uuid)).first()
+    tramite = db.query(Tramite).filter(Tramite.uuid == uuid).first()
 
     # Si no existe en la base de datos, disparamos el error 404 estandarizado
     if not tramite:

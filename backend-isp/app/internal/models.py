@@ -5,18 +5,15 @@ from sqlalchemy.dialects.postgresql import UUID
 from app.internal.database import Base
 import enum
 
-
 class TipoTramite(str, enum.Enum):
     ALTA = "ALTA"
     BAJA = "BAJA"
-
 
 class EstadoTramite(str, enum.Enum):
     en_curso = "en_curso"
     completado = "completado"
     rechazado = "rechazado"
     finalizado = "finalizado"
-
 
 class Tramite(Base):
     __tablename__ = "tramites"
@@ -29,8 +26,6 @@ class Tramite(Base):
     nombre = Column(String, nullable=True)
     apellido = Column(String, nullable=True)
     email = Column(String, nullable=True)
-
-    nro_servicio = Column(String, nullable=True)
 
     url_dni = Column(String, nullable=False)
     url_impuesto = Column(String, nullable=True)
