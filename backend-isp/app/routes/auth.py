@@ -1,43 +1,28 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
+from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from app.services.auth import create_access_token, verify_password, get_password_hash
-from datetime import datetime, timedelta
+from app.internal import models
+from app.internal.database import get_db
+from app.services.auth import verify_password, generar_tokens_login
 
 router = APIRouter(prefix="/auth", tags=["Seguridad"])
-
-# Mock Administrative User para pruebas de QA / Desarrollo
-MOCK_ADMIN = {
-    "username": "admin",
-    "password": get_password_hash("admin")
-}
-
 
 class LoginRequest(BaseModel):
     usuario: str
     password: str
 
-
 @router.post("/login")
-async def login(request: LoginRequest):
-    # Verificación de usuario y contraseña
-    if request.usuario != MOCK_ADMIN["username"] or not verify_password(request.password, MOCK_ADMIN["password"]):
+async def login(request: LoginRequest, db: Session = Depends(get_db)):
+    # 1. Buscamos al administrador en PostgreSQL (reemplazando al viejo MOCK_ADMIN)
+    admin_user = db.query(models.UsuarioAdmin).filter(models.UsuarioAdmin.username == request.usuario).first()
+
+    # 2. Validamos existencia y hash
+    if not admin_user or not verify_password(request.password, admin_user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Calculamos tiempos de expiración reales para cumplir el Swagger
-    expires_delta = timedelta(minutes=30)
-    expires_at = datetime.utcnow() + expires_delta
-
-    # Generamos los tokens correspondientes
-    access_token = create_access_token(data={"sub": request.usuario}, expires_delta=expires_delta)
-    refresh_token = create_access_token(data={"sub": request.usuario}, expires_delta=timedelta(days=7))
-
-    # Retornamos la estructura exacta exigida por el Swagger de tu ISP
-    return {
-        "accessToken": access_token,
-        "refreshToken": refresh_token,
-        "expiresAt": expires_at.isoformat() + "Z"
-    }
+    # 3. Invocamos la función del servicio que procesa los tokens con las variables del .env
+    return generar_tokens_login(username=admin_user.username)

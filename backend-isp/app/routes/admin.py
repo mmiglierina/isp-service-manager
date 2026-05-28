@@ -4,8 +4,10 @@ from jose import jwt, JWTError
 import os
 from typing import List, Optional
 from sqlalchemy.orm import Session
+from uuid import UUID
+from datetime import datetime
 
-from app.schemas.procedure import ProcedureSummary, ProcedureDetail, ProcedureStatus
+from app.schemas.procedure import ProcedureSummary, ProcedureDetail, UpdateStatusRequest
 from app.internal.database import get_db
 from app.internal.models import Tramite, EstadoTramite
 
@@ -93,25 +95,42 @@ class UpdateStatusRequest(BaseModel):
     observaciones: Optional[str] = None
 
 
-@router.patch("/tramite/{uuid}")
+@router.patch("/tramite/{uuid}", response_model=dict)
 async def change_status(
-        uuid: str,
+        uuid: UUID,
         request_data: UpdateStatusRequest,
         current_user: str = Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
-    # Buscamos el registro a modificar
+    # Buscamos el trámite por su UUID nativo en PostgreSQL
     tramite = db.query(Tramite).filter(Tramite.uuid == uuid).first()
 
     if not tramite:
-        raise HTTPException(status_code=404, detail="Trámite no encontrado")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Trámite no encontrado"
+        )
 
-    # Actualizamos los campos persistentes
+    # Regla de negocio / Validación: Si el trámite se rechaza, exigimos observaciones
+    if request_data.estado == EstadoTramite.rechazado and not request_data.observaciones:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Debe proporcionar un comentario/observación indicando el motivo del rechazo."
+        )
+
+    # Actualizamos los campos persistentes en la tabla
     tramite.estado = request_data.estado
-    if request_data.observaciones is not None:
-        tramite.observaciones = request_data.observaciones
+    tramite.observaciones = request_data.observaciones
+    tramite.fecha_actualizacion = datetime.utcnow()  # Registramos la fecha de auditoría
 
-    # Confirmamos los cambios en la base de datos (SQLite/Postgres)
-    db.commit()
+    # Confirmamos los cambios en el contenedor de PostgreSQL
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error interno al guardar los cambios en la base de datos."
+        )
 
-    return {"message": "Estado actualizado con éxito"}
+    return {"message": f"El trámite ha cambiado exitosamente al estado: {request_data.estado.value}"}

@@ -39,3 +39,10 @@ class Tramite(Base):
     observaciones = Column(Text, nullable=True)
     fecha_creacion = Column(DateTime, default=datetime.utcnow, nullable=False)
     fecha_actualizacion = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+class UsuarioAdmin(Base):
+    __tablename__ = "usuarios_admin"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    username = Column(String, unique=True, index=True, nullable=False)
+    hashed_password = Column(String, nullable=False)

@@ -53,23 +53,36 @@ async def create_activation(
 @router.post("/baja", response_model=CreatedResponse, status_code=status.HTTP_201_CREATED)
 async def create_deactivation(
         dni: str = Form(...),
-        nroServicio: str = Form(...),
         adjuntoDni: UploadFile = File(...),
         adjuntoFactura: UploadFile = File(...),
-        db: Session = Depends(get_db)  # <-- Inyección de la Base de Datos
+        db: Session = Depends(get_db)
 ):
-    # Procesamiento seguro de los adjuntos para la baja
+    # 🔍 FILTRO / VALIDACIÓN DE NEGOCIO:
+    # Verificamos si existe un trámite de ALTA para este DNI que esté COMPLETADO
+    alta_existente = db.query(Tramite).filter(
+        Tramite.dni == dni,
+        Tramite.tipo == TipoTramite.ALTA,
+        Tramite.estado == EstadoTramite.completado  # O 'finalizado' según tus Enums
+    ).first()
+
+    # Si no se encuentra un alta aprobada, rechazamos la petición de baja inmediatamente
+    if not alta_existente:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No se puede iniciar el trámite de baja. No existe ningún servicio de alta activo para el DNI proporcionado."
+        )
+
+    # Si pasa el filtro, procedemos a guardar los archivos normalmente
     path_dni = validate_and_save_file(adjuntoDni, "deactivation_dni")
     path_invoice = validate_and_save_file(adjuntoFactura, "deactivation_invoice")
 
     generated_uuid = uuid.uuid4()
 
-    # Construimos la entidad mapeando los campos nulos correspondientes a BAJA
+    # Construimos la entidad mapeando el DNI al trámite
     nuevo_tramite = Tramite(
-        uuid=generated_uuid,
+        uuid=str(generated_uuid),
         tipo=TipoTramite.BAJA,
         dni=dni,
-        nro_servicio=nroServicio,
         url_dni=path_dni,
         url_factura=path_invoice,
         estado=EstadoTramite.en_curso
@@ -92,11 +105,13 @@ async def get_procedure_status(uuid: UUID, db: Session = Depends(get_db)):
     if not tramite:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="No se encontró el trámite buscado con el UUID proporcionado."
+            detail="Trámite no encontrado. Verifique el UUID e intente nuevamente."
         )
 
-    # Devolvemos la estructura exacta que pide el Swagger para el cliente
+    # Retornamos la información incluyendo el tipo de trámite (ALTA o BAJA)
     return {
-        "estado": tramite.estado.value,
-        "observaciones": tramite.observaciones
+        "uuid": tramite.uuid,
+        "tipo": tramite.tipo.value if hasattr(tramite.tipo, 'value') else tramite.tipo,
+        "estado": tramite.estado.value if hasattr(tramite.estado, 'value') else tramite.estado,
+        "observaciones": tramite.observaciones if hasattr(tramite, 'observaciones') else None
     }
