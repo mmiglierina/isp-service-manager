@@ -17,8 +17,10 @@ from httpx import AsyncClient, ASGITransport
 # Creación de mock para logueo de usuario
 from app.routes.admin import get_current_user
 
-# 3. Creamos el motor de base de datos SQLite para las pruebas
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
+os.environ["SECRET_KEY"] = os.getenv("SECRET_KEY", "llave_secreta_super_segura_para_entorno_de_pruebas")
+os.environ["ALGORITHM"] = os.getenv("ALGORITHM", "HS256")
+
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
     connect_args={"check_same_thread": False}
