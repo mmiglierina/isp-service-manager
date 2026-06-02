@@ -15,7 +15,6 @@ router = APIRouter(prefix="/admin", tags=["Administración"])
 
 security = HTTPBearer()
 
-
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
     try:
@@ -26,7 +25,6 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         return username
     except JWTError:
         raise HTTPException(status_code=401, detail="Credenciales no válidas")
-
 
 @router.get("/tramites", response_model=List[ProcedureSummary])
 async def list_all_procedures(
@@ -57,10 +55,9 @@ async def list_all_procedures(
 
     return respuesta
 
-
 @router.get("/tramite/{uuid}", response_model=ProcedureDetail)
 async def get_procedure_detail(
-        uuid: str,
+        uuid: UUID,
         current_user: str = Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
@@ -85,15 +82,12 @@ async def get_procedure_detail(
         "fechaActualizacion": t.fecha_actualizacion
     }
 
-
 # Creamos una clase intermedia para recibir el cuerpo del PATCH de acuerdo al Swagger
 from pydantic import BaseModel
-
 
 class UpdateStatusRequest(BaseModel):
     estado: EstadoTramite
     observaciones: Optional[str] = None
-
 
 @router.patch("/tramite/{uuid}", response_model=dict)
 async def change_status(

@@ -6,9 +6,9 @@ from app.internal.models import Tramite, TipoTramite, EstadoTramite
 # ==============================================================================
 # Helpers para simular archivos PDF/Imágenes en memoria RAM
 # ==============================================================================
-def crear_archivo_mock(nombre_archivo: str) -> tuple:
+def create_mock_files(files_name: str) -> tuple:
     """Genera un archivo binario simulado en memoria para los uploads."""
-    return (nombre_archivo, io.BytesIO(b"contenido_de_prueba_pdf_o_imagen"), "application/pdf")
+    return (files_name, io.BytesIO(b"contenido_de_prueba_pdf_o_imagen"), "application/pdf")
 
 # ==============================================================================
 # 1. TEST DEL TRÁMITE DE ALTA (Exitoso)
@@ -25,13 +25,13 @@ async def test_crear_tramite_alta_exitoso(client):
         "email": "juan@example.com"
     }
 
-    archivos = {
-        "adjuntoDni": crear_archivo_mock("dni_juan.pdf"),
-        "adjuntoImpuesto": crear_archivo_mock("impuesto_juan.pdf")
+    files = {
+        "adjuntoDni": create_mock_files("dni_juan.pdf"),
+        "adjuntoImpuesto": create_mock_files("impuesto_juan.pdf")
     }
 
     # 2. ACT: Enviamos la petición POST simulando form-data al endpoint correcto
-    response = await client.post("/tramite/alta", data=form_data, files=archivos)
+    response = await client.post("/tramite/alta", data=form_data, files=files)
 
     # 3. ASSERT: Validamos la respuesta del servidor
     assert response.status_code == 201
@@ -40,23 +40,25 @@ async def test_crear_tramite_alta_exitoso(client):
     assert data["mensaje"] == "Alta iniciada correctamente."
 
 # ==============================================================================
-# 2. TESTS DEL TRÁMITE DE BAJA (Filtro de Negocio y Éxito)
+# 2. TESTS DEL TRÁMITE DE BAJA (Filtro y Éxito)
 # ==============================================================================
 @pytest.mark.asyncio
 async def test_crear_tramite_baja_fallido_sin_alta_previa(client):
-    """Regra de negocio: No se puede iniciar una baja si el DNI no tiene un alta completada."""
+    """No se puede iniciar una baja si el DNI no tiene un alta completada."""
 
+    # 1. ARRANGE: Agregamos un DNI que no existe en la base de datos
     form_data = {
-        "dni": "99999999"  # Un DNI random que no existe en la BD en memoria
+        "dni": "99999999"
     }
     archivos = {
-        "adjuntoDni": crear_archivo_mock("baja_dni.pdf"),
-        "adjuntoFactura": crear_archivo_mock("baja_factura.pdf")
+        "adjuntoDni": create_mock_files("baja_dni.pdf"),
+        "adjuntoFactura": create_mock_files("baja_factura.pdf")
     }
 
+    # 2. ACT: Enviamos la petición POST simulando form-data al endpoint correcto
     response = await client.post("/tramite/baja", data=form_data, files=archivos)
 
-    # Debe rebotar con un 400 Bad Request debido a tu validación interna
+    # 3. ASSERT: Validamos la respuesta del servidor
     assert response.status_code == 400
     assert "No se puede iniciar el trámite de baja" in response.json()["detail"]
 
@@ -83,8 +85,8 @@ async def test_crear_tramite_baja_exitoso(client, db_session):
     # Preparamos los datos de la baja para ese mismo DNI
     form_data = {"dni": dni_cliente}
     archivos = {
-        "adjuntoDni": crear_archivo_mock("baja_dni_carlos.pdf"),
-        "adjuntoFactura": crear_archivo_mock("baja_factura_carlos.pdf")
+        "adjuntoDni": create_mock_files("baja_dni_carlos.pdf"),
+        "adjuntoFactura": create_mock_files("baja_factura_carlos.pdf")
     }
 
     # 2. ACT: Solicitamos la baja
@@ -125,7 +127,7 @@ async def test_obtener_tramite_existente(client, db_session):
     # 3. ASSERT: Validamos la respuesta
     assert response.status_code == 200
     data = response.json()
-    assert data["uuid"] == str(uuid_testigo)  # FastAPI responde con texto en el JSON
+    assert data["uuid"] == str(uuid_testigo)
     assert data["tipo"] == "ALTA"
     assert data["estado"] == "en_curso"
 

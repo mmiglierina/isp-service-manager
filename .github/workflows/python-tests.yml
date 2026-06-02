@@ -37,4 +37,4 @@ jobs:
     - name: Run tests with pytest
       run: |
         cd backend-isp
-        PYTHONPATH=. pytest tests/test_tramites.py
+        PYTHONPATH=. pytest tests/
