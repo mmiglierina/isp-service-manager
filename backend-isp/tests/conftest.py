@@ -1,5 +1,6 @@
 import os
-import sys
+from unittest.mock import patch
+import app.services.auth as auth_service
 
 # FORZAMOS el cambio de variable de entorno en la memoria de ejecución antes de importar la app.
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
@@ -17,10 +18,27 @@ from httpx import AsyncClient, ASGITransport
 # Creación de mock para logueo de usuario
 from app.routes.admin import get_current_user
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
-os.environ["SECRET_KEY"] = os.getenv("SECRET_KEY", "llave_secreta_super_segura_para_entorno_de_pruebas")
-os.environ["ALGORITHM"] = os.getenv("ALGORITHM", "HS256")
+# ==============================================================================
+# FIX PARA EL SECRET KEY AUTOMÁTICO
+# ==============================================================================
+@pytest.fixture(autouse=True)
+def patch_secret_key_for_testing():
+    """
+    Esta función corre automáticamente para TODOS los tests.
+    Reemplaza temporalmente las variables globales de auth.py si están vacías (None).
+    """
+    # Utilizado para GitHub Actions que no tiene variable de entorno
+    if auth_service.SECRET_KEY is None:
+        with patch.object(auth_service, 'SECRET_KEY', 'llave_secreta_super_segura_para_entorno_de_pruebas_123'):
+            with patch.object(auth_service, 'ALGORITHM', 'HS256'):
+                yield
+    else:
+        yield
 
+# ==============================================================================
+# CONFIGURACIÓN DE BASE DE DATOS Y CLIENTES
+# ==============================================================================
+SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
     connect_args={"check_same_thread": False}
