@@ -11,6 +11,7 @@ from services import (
     get_all_procedures,
     post_new_procedure,
     authenticate_admin,
+    update_procedure_status,
     FASTAPI_BASE_URL
 )
 
@@ -149,12 +150,11 @@ def admin_dashboard():
 def admin_manage_procedure(procedure_id):
     global SESSION_TOKEN
     if not SESSION_TOKEN:
-        # Si intentan entrar directo sin loguearse, los mandamos al index de clientes
         return redirect(url_for('index'))
 
     headers = {"Authorization": f"Bearer {SESSION_TOKEN}"}
 
-    # 1. GET: Consumimos el detalle completo del trámite desde el área protegida de FastAPI
+    # GET: Consumimos el detalle completo desde el servicio externo
     record = get_procedure_by_id(procedure_id, headers=headers)
     if not record:
         flash("El trámite solicitado no existe en el sistema.", "danger")
@@ -164,33 +164,25 @@ def admin_manage_procedure(procedure_id):
         new_status = request.form.get('estado')
         new_observations = request.form.get('observaciones')
 
-        try:
-            url = f"{FASTAPI_BASE_URL}/admin/tramite/{procedure_id}"
-            patch_payload = {
-                "estado": new_status,
-                "observaciones": new_observations
-            }
+        status_code, response_data = update_procedure_status(
+            procedure_id=procedure_id,
+            estado=new_status,
+            observaciones=new_observations,
+            headers=headers
+        )
 
-            # Envíamos la actualización mediante PATCH mapeando con UpdateStatusRequest de FastAPI
-            response = requests.patch(url, json=patch_payload, headers=headers, timeout=5)
-
-            if response.status_code == 200:
-                flash("Trámite actualizado con éxito en la base de datos.", "success")
-            elif response.status_code == 400:
-                # Regla de negocio de FastAPI: si es rechazado exige observaciones
-                error_detail = response.json().get('detail', 'Error de validación.')
-                flash(f"Error: {error_detail}", "danger")
-                return render_template('admin_detalle.html', procedure=record)
-            else:
-                flash("Error al guardar la actualización del trámite.", "danger")
-
-        except requests.exceptions.RequestException as error:
-            print(f"[LOG ERROR] Fallo al actualizar trámite: {error}")
-            flash("Error de comunicación con el backend central.", "danger")
+        if status_code == 200:
+            flash("Trámite actualizado con éxito en la base de datos.", "success")
+        elif status_code == 400:
+            # si es rechazado exige observaciones
+            error_detail = response_data.get('detail', 'Error de validación.')
+            flash(f"Error: {error_detail}", "danger")
+            return render_template('admin_detalle.html', procedure=record)
+        else:
+            flash("Error al guardar la actualización del trámite en el backend.", "danger")
 
         return redirect(url_for('admin_dashboard'))
 
-    # Renderizamos la plantilla pasándole el diccionario "record" que devolvió FastAPI
     return render_template('admin_detalle.html', procedure=record)
 
 if __name__ == '__main__':

@@ -26,7 +26,15 @@
         {% for item in dataset %}
         <tr>
             <td>{{ item.fechaCreacion | format_iso_date }}</td>
-            <td><span class="badge bg-info text-dark">{{ item.tipo }}</span></td>
+            <td>
+                {% if item.tipo == 'ALTA' or item.tipo == 'alta' %}
+                    <span class="badge bg-success px-2 py-1 text-uppercase fw-bold">Alta</span>
+                {% elif item.tipo == 'BAJA' or item.tipo == 'baja' %}
+                    <span class="badge bg-danger px-2 py-1 text-uppercase fw-bold">Baja</span>
+                {% else %}
+                    <span class="badge bg-secondary px-2 py-1 text-uppercase fw-bold">{{ item.tipo }}</span>
+                {% endif %}
+            </td>
             <td>{{ item.dni }}</td>
             <td>
                 <span class="badge {% if item.estado == 'en_curso' %}bg-warning text-dark{% elif item.estado == 'completado' %}bg-success{% elif item.estado == 'rechazado' %}bg-danger{% else %}bg-dark{% endif %}">

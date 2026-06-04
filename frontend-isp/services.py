@@ -7,7 +7,6 @@ load_dotenv()
 
 FASTAPI_BASE_URL = os.getenv("FASTAPI_BASE_URL", "http://127.0.0.1:8000")
 
-
 def authenticate_admin(usuario: str, password: str) -> tuple:
     """
     Envía las credenciales a FastAPI para autenticar al administrador.
@@ -49,7 +48,6 @@ def get_procedure_by_id(procedure_id: str, headers: dict = None) -> dict:
         print(f"[LOG ERROR] Error de conexión en get_procedure_by_id: {error}")
         return None
 
-
 def get_all_procedures(status_filter: str = None, headers: dict = None) -> list:
     """
     Recupera el listado de trámites desde el área protegida de FastAPI.
@@ -73,7 +71,6 @@ def get_all_procedures(status_filter: str = None, headers: dict = None) -> list:
         print(f"[LOG ERROR] Error de conexión en get_all_procedures: {error}")
         return []
 
-
 def post_new_procedure(endpoint_path: str, form_fields: dict, file_fields: dict) -> tuple:
     """ Abstracción genérica para el envío de solicitudes multipart/form-data. """
     try:
@@ -83,3 +80,29 @@ def post_new_procedure(endpoint_path: str, form_fields: dict, file_fields: dict)
     except requests.exceptions.RequestException as error:
         print(f"[LOG ERROR] Fallo al enviar payload a FastAPI: {error}")
         return 500, {}
+
+def update_procedure_status(procedure_id: str, estado: str, observaciones: str, headers: dict) -> tuple:
+    """
+    Envía una actualización PATCH a FastAPI para modificar el estado u observaciones de un trámite.
+    Devuelve una tupla (status_code, response_json_o_dict)
+    """
+    try:
+        url = f"{FASTAPI_BASE_URL}/admin/tramite/{procedure_id}"
+        patch_payload = {
+            "estado": estado,
+            "observaciones": observaciones
+        }
+
+        response = requests.patch(url, json=patch_payload, headers=headers, timeout=5)
+
+        # Intentamos retornar el JSON si existe, sino un diccionario vacío
+        try:
+            response_data = response.json()
+        except Exception:
+            response_data = {}
+
+        return response.status_code, response_data
+
+    except requests.exceptions.RequestException as error:
+        print(f"[LOG ERROR] Fallo al actualizar trámite en services.py: {error}")
+        return 500, {"detail": "Error de comunicación con el backend central."}

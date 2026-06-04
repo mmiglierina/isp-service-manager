@@ -1,9 +1,15 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
-        <h2>Gestión y Auditoría de Trámite</h2>
-        <span class="badge bg-secondary fs-5">Tipo: {{ procedure.tipo }}</span>
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-4">
+            <h4 class="text-primary mb-0">Gestión y auditoria de Trámite</h4>
+            {% if procedure.tipo == 'ALTA' or procedure.tipo == 'alta' %}
+                <span class="badge bg-success fs-6 px-3 py-2 text-uppercase fw-bold">Operación: Alta</span>
+            {% elif procedure.tipo == 'BAJA' or procedure.tipo == 'baja' %}
+                <span class="badge bg-danger fs-6 px-3 py-2 text-uppercase fw-bold">Operación: Baja</span>
+            {% else %}
+                <span class="badge bg-secondary fs-6 px-3 py-2 text-uppercase fw-bold">Operación: {{ procedure.tipo }}</span>
+            {% endif %}
     </div>
 
     <div class="row">
