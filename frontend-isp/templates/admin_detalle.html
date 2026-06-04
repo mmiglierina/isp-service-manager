@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
+        <h2>Gestión y Auditoría de Trámite</h2>
+        <span class="badge bg-secondary fs-5">Tipo: {{ procedure.tipo }}</span>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card p-3 mb-4 bg-white shadow-sm">
+                <h5 class="text-primary border-bottom pb-2 mb-3">Datos del Solicitante</h5>
+                <p><strong>UUID del Registro:</strong><br><small class="text-muted">{{ procedure.uuid }}</small></p>
+                <p><strong>DNI:</strong> {{ procedure.dni }}</p>
+                <p><strong>Nombre:</strong> {{ procedure.nombre if procedure.nombre else 'N/A' }}</p>
+                <p><strong>Apellido:</strong> {{ procedure.apellido if procedure.apellido else 'N/A' }}</p>
+
+                <h5 class="text-primary border-bottom pb-2 mt-4 mb-3">Auditoría de Fechas</h5>
+                <p><strong>Fecha de Creación:</strong> {{ procedure.fechaCreacion | format_iso_date }}</p>
+                <p><strong>Última Modificación:</strong> {{ procedure.fechaActualizacion | format_iso_date }}</p>
+            </div>
+
+            <div class="card p-3 mb-4 bg-white shadow-sm">
+                <h5 class="text-primary border-bottom pb-2 mb-3">Documentación Resguardada</h5>
+                <div class="vstack gap-2">
+                    {% if procedure.urlDni %}
+                    <div class="p-2 border rounded bg-light">
+                        <div class="small text-muted fw-bold">URL Adjunto DNI:</div>
+                        <a href="{{ procedure.urlDni }}" target="_blank" class="text-break font-monospace small">{{ procedure.urlDni }}</a>
+                    </div>
+                    {% endif %}
+
+                    {% if procedure.urlImpuesto %}
+                    <div class="p-2 border rounded bg-light">
+                        <div class="small text-muted fw-bold">URL Adjunto Impuesto (Domicilio):</div>
+                        <a href="{{ procedure.urlImpuesto }}" target="_blank" class="text-break font-monospace small">{{ procedure.urlImpuesto }}</a>
+                    </div>
+                    {% endif %}
+
+                    {% if procedure.urlFactura %}
+                    <div class="p-2 border rounded bg-light">
+                        <div class="small text-muted fw-bold">URL Adjunto Factura:</div>
+                        <a href="{{ procedure.urlFactura }}" target="_blank" class="text-break font-monospace small">{{ procedure.urlFactura }}</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card p-3 mb-4 bg-white shadow-sm border-start border-4 border-primary">
+                <h5 class="text-primary border-bottom pb-2 mb-3">Resolución del Trámite</h5>
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Modificar Estado Actual</label>
+                        <select name="estado" class="form-select">
+                            <option value="en_curso" {% if procedure.estado == 'en_curso' %}selected{% endif %}>En Curso</option>
+                            <option value="completado" {% if procedure.estado == 'completado' %}selected{% endif %}>Completado</option>
+                            <option value="rechazado" {% if procedure.estado == 'rechazado' %}selected{% endif %}>Rechazado</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Observaciones e Historial Clínico del Trámite</label>
+                        <textarea name="observaciones" class="form-control" rows="6" placeholder="Escriba los motivos de la resolución. (Obligatorio en caso de seleccionar RECHAZADO)...">{{ procedure.observaciones if procedure.observaciones else '' }}</textarea>
+                        <div class="form-text text-muted">Este comentario será visible para el cliente cuando consulte su UUID.</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100 py-2 fw-bold">Aplicar Cambios en PostgreSQL</button>
+                </form>
+            </div>
+
+            <div class="text-start">
+                <a href="/admin/panel" class="btn btn-outline-secondary px-4">Volver al Listado General</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

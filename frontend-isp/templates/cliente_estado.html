@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card shadow-sm bg-white p-4">
+            <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-4">
+                <h4 class="text-primary mb-0">Consulta Pública de Trámite</h4>
+                <span class="badge bg-secondary fs-6">Operación: {{ procedure.tipo }}</span>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label text-muted small fw-bold mb-1">Código de Seguimiento (UUID):</label>
+                <div class="p-2 bg-light rounded border d-flex justify-content-between align-items-center">
+                    <code class="text-dark small text-break" id="uuidCodeTracker">{{ procedure.uuid }}</code>
+                    <button class="btn btn-xs btn-link p-0 text-decoration-none ms-2" onclick="copiarTracker()">Copiar</button>
+                </div>
+            </div>
+
+            <div class="alert {% if procedure.estado == 'en_curso' %}alert-warning text-dark{% elif procedure.estado == 'completado' %}alert-success{% elif procedure.estado == 'rechazado' %}alert-danger{% else %}alert-dark{% endif %} mb-4 text-center">
+                <span class="small d-block text-muted text-uppercase fw-bold">Estado de Situación actual</span>
+                <h3 class="alert-heading my-1"><strong>{{ procedure.estado | upper }}</strong></h3>
+            </div>
+
+            {% if procedure.observaciones %}
+            <div class="mb-4 p-3 bg-light rounded border-start border-4 border-danger">
+                <h6 class="text-danger fw-bold mb-1">Detalle de la Resolución u Observaciones:</h6>
+                <p class="mb-0 text-dark small" style="white-space: pre-wrap;">{{ procedure.observaciones }}</p>
+            </div>
+            {% else %}
+            <div class="text-center p-3 text-muted bg-light rounded mb-4 small">
+                No se registran observaciones ni objeciones pendientes sobre este trámite por el momento.
+            </div>
+            {% endif %}
+
+            <div class="text-end">
+                <a href="/" class="btn btn-primary px-4 btn-sm">Nueva Consulta</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copiarTracker() {
+    var texto = document.getElementById("uuidCodeTracker").innerText;
+    navigator.clipboard.writeText(texto).then(function() {
+        alert("Código copiado al portapapeles.");
+    });
+}
+</script>
+{% endblock %}

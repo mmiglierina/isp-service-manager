@@ -13,7 +13,6 @@ class EstadoTramite(str, enum.Enum):
     en_curso = "en_curso"
     completado = "completado"
     rechazado = "rechazado"
-    finalizado = "finalizado"
 
 class Tramite(Base):
     __tablename__ = "tramites"

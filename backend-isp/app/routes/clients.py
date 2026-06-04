@@ -85,27 +85,29 @@ async def create_deactivation(
     alta_existente = db.query(Tramite).filter(
         Tramite.dni == dni,
         Tramite.tipo == TipoTramite.ALTA,
-        Tramite.estado == EstadoTramite.completado  # O 'finalizado' según tus Enums
+        Tramite.estado == EstadoTramite.completado
     ).first()
 
-    # Si no se encuentra un alta aprobada, rechazamos la petición de baja inmediatamente
     if not alta_existente:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No se puede iniciar el trámite de baja. No existe ningún servicio de alta activo para el DNI proporcionado."
         )
 
-    # Si pasa el filtro, procedemos a guardar los archivos normalmente
+    # Procesamos los archivos normalmente
     path_dni = validate_and_save_file(adjuntoDni, "deactivation_dni")
     path_invoice = validate_and_save_file(adjuntoFactura, "deactivation_invoice")
 
     generated_uuid = uuid.uuid4()
 
-    # Construimos la entidad mapeando el DNI al trámite
+    # SOLUCIÓN: Creamos la entidad mapeando el DNI, pero arrastrando NOMBRE y APELLIDO del alta original
     nuevo_tramite = Tramite(
         uuid=generated_uuid,
         tipo=TipoTramite.BAJA,
         dni=dni,
+        nombre=alta_existente.nombre,
+        apellido=alta_existente.apellido,
+        email=alta_existente.email,
         url_dni=path_dni,
         url_factura=path_invoice,
         estado=EstadoTramite.en_curso

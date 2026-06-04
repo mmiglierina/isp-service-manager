@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Panel de Control - Gestión Interna</h2>
+    <a href="/admin/panel" class="btn btn-outline-secondary btn-sm">Ver Todos</a>
+</div>
+
+<div class="mb-3">
+    <strong>Filtrar por estado:</strong>
+    <a href="/admin/panel?estado=en_curso" class="btn btn-sm btn-warning">En Curso</a>
+    <a href="/admin/panel?estado=completado" class="btn btn-sm btn-success">Completado</a>
+    <a href="/admin/panel?estado=rechazado" class="btn btn-sm btn-danger">Rechazado</a>
+</div>
+
+<table class="table table-striped bg-white shadow-sm rounded">
+    <thead>
+        <tr>
+            <th>Fecha Creación</th>
+            <th>Tipo Trámite</th>
+            <th>DNI Solicitante</th>
+            <th>Estado Actual</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in dataset %}
+        <tr>
+            <td>{{ item.fechaCreacion | format_iso_date }}</td>
+            <td><span class="badge bg-info text-dark">{{ item.tipo }}</span></td>
+            <td>{{ item.dni }}</td>
+            <td>
+                <span class="badge {% if item.estado == 'en_curso' %}bg-warning text-dark{% elif item.estado == 'completado' %}bg-success{% elif item.estado == 'rechazado' %}bg-danger{% else %}bg-dark{% endif %}">
+                    {{ item.estado }}
+                </span>
+            </td>
+            <td>
+                <a href="/admin/tramite/{{ item.uuid }}" class="btn btn-sm btn-primary">Ver / Gestionar</a>
+            </td>
+        </tr>
+    {% else %}
+        <tr>
+            <td colspan="5" class="text-center">No se encontraron trámites en la base de datos.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

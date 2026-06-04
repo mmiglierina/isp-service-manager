@@ -1,62 +1,46 @@
-# =========================
-# Backend FastAPI / Python
+# ====================================================================
+# GITIGNORE UNIFICADO (ISP SERVICE MANAGER)
+# ====================================================================
 
-# Images
-uploads/*
+# Archivos de configuración de entorno (Ignora en cualquier carpeta)
+**/.env
+**/.env.*
+!**/.env.example
 
-# Pychamp
-/.idea/*
-/backend-isp/.idea/*
+# Entornos virtuales de Python (Cualquier subcarpeta venv o .venv)
+**/venv/
+**/.venv/
+**/env/
 
-# Variables de entorno
-backend-isp/.env
-backend-isp/.env.*
-!backend-isp/.env.example
+# Python: Archivos compilados y Caché
+**/__pycache__/
+**/*.py[cod]
+**/*$py.class
+**/.Python
+**/.pytest_cache/
+**/.coverage
+**/htmlcov/
+**/.mypy_cache/
 
-# Entornos virtuales
-backend-isp/venv/
-backend-isp/.venv/
-backend-isp/env/
+# Archivos cargados por usuarios / Media local (Backend)
+**/uploads/
+**/media/
+backend-isp/static/uploads/
 
-# Python cache / compilados
-backend-isp/__pycache__/
-backend-isp/**/*.py[cod]
-backend-isp/*$py.class
-backend-isp/.Python
+# Archivos de Bases de Datos Locales
+**/*.db
+**/*.sqlite3
 
-# Build / distribución
-backend-isp/build/
-backend-isp/dist/
-backend-isp/*.egg-info/
+# Editores de código e IDEs (VS Code y PyCharm)
+**/.vscode/
+**/.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
 
-# Logs
-backend-isp/*.log
-backend-isp/logs/
-
-# Test / coverage
-backend-isp/.pytest_cache/
-backend-isp/.coverage
-backend-isp/htmlcov/
-backend-isp/.mypy_cache/
-
-# FastAPI / Uvicorn
-backend-isp/.uvicorn/
-
-# Base de datos local (si usás SQLite)
-backend-isp/*.db
-backend-isp/*.sqlite3
-
-# Archivos subidos / media (si guardás uploads locales)
-backend-isp/uploads/
-backend-isp/media/
-
-# IDEs
-backend-isp/.vscode/
-backend-isp/.idea/
-
-# Sistema operativo
-backend-isp/.DS_Store
-backend-isp/Thumbs.db
-
-# Backend FastAPI / Python
-# =========================
+# Archivos temporales del Sistema Operativo
+.DS_Store
+Thumbs.db
+desktop.ini

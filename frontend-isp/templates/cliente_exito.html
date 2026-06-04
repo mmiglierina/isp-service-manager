@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-7">
+        <div class="card shadow border-0 rounded-3 bg-white p-4 text-center">
+            <div class="mb-3">
+                <span class="display-3 text-success">✓</span>
+            </div>
+
+            <h3 class="fw-bold text-dark">¡Solicitud de {{ tipo }} Registrada!</h3>
+            <p class="text-muted">El trámite se ha iniciado de forma correcta en nuestra plataforma digital. Guarde el siguiente código identificador para realizar el seguimiento en tiempo real.</p>
+
+            <div class="my-4 p-3 bg-light rounded border d-flex align-items-center justify-content-between">
+                <code class="fs-5 text-primary fw-bold text-break text-start me-2" id="uuidCode">{{ uuid }}</code>
+                <button type="button" class="btn btn-outline-primary btn-sm flex-shrink-0" id="btnCopiar" onclick="copiarAlPortapapeles()">
+                    Copiar Código
+                </button>
+            </div>
+
+            <div class="alert alert-info py-2 small text-start mb-4">
+                💡 <strong>¿Qué sigue ahora?</strong> Nuestro equipo técnico auditará la documentación cargada. Podrá ingresar este código en la página principal cuando desee conocer el avance de su gestión.
+            </div>
+
+            <div>
+                <a href="/" class="btn btn-primary w-100 py-2 fw-bold">Entendido, Volver al Inicio</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copiarAlPortapapeles() {
+    // Obtenemos el texto del elemento <code>
+    var textoCodigo = document.getElementById("uuidCode").innerText;
+    var boton = document.getElementById("btnCopiar");
+
+    // Copiamos al portapapeles del sistema operativo
+    navigator.clipboard.writeText(textoCodigo).then(function() {
+        // Feedback visual en el botón
+        boton.innerText = "¡Copiado! ✓";
+        boton.classList.remove("btn-outline-primary");
+        boton.classList.add("btn-success");
+
+        // Restauramos el botón a su estado original después de 2 segundos
+        setTimeout(function() {
+            boton.innerText = "Copiar Código";
+            boton.classList.remove("btn-success");
+            boton.classList.add("btn-outline-primary");
+        }, 2000);
+    }).catch(function(err) {
+        console.error('Error al intentar copiar el código: ', err);
+    });
+}
+</script>
+{% endblock %}

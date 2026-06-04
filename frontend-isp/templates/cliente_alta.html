@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Iniciar Trámite de Alta de Servicio</h2>
+<form method="POST" enctype="multipart/form-data" class="bg-white p-4 shadow-sm rounded">
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Nombre</label>
+            <input type="text" name="nombre" class="form-control" required>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Apellido</label>
+            <input type="text" name="apellido" class="form-control" required>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">DNI</label>
+            <input type="text" name="dni" class="form-control" required>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Email</label>
+            <input type="email" name="email" class="form-control" required>
+        </div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Adjunto DNI (Foto/PDF)</label>
+        <input type="file" name="adjuntoDni" class="form-control" required>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Adjunto Impuesto (Acreditar domicilio)</label>
+        <input type="file" name="adjuntoImpuesto" class="form-control" required>
+    </div>
+    <button type="submit" class="btn btn-success">Enviar Solicitud</button>
+    <a href="/" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}
