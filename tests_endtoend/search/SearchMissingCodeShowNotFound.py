@@ -6,6 +6,8 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.common.exceptions import NoSuchElementException, NoAlertPresentException
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 import unittest
 import time
 
@@ -20,6 +22,7 @@ class SearchMissingCodeShowNotFound(unittest.TestCase):
             options.add_argument("--headless=new")
             options.add_argument("--no-sandbox")
             options.add_argument("--disable-dev-shm-usage")
+            options.add_argument("--window-size=1920,1080")
             service = Service(ChromeDriverManager().install())
         else:
             options.binary_location = r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
@@ -39,7 +42,10 @@ class SearchMissingCodeShowNotFound(unittest.TestCase):
         driver.find_element(By.ID, "code").send_keys("1111111111112")
         driver.find_element(By.ID, "search").click()
 
-        alert_text = driver.find_element(By.CSS_SELECTOR, ".alert-danger").text
+        elemento_alerta = WebDriverWait(driver, 10).until(
+            EC.visibility_of_element_located((By.CSS_SELECTOR, ".alert-danger"))
+        )
+        alert_text = elemento_alerta.text
         self.assertEqual("Artículo no encontrado", alert_text)
 
     def is_element_present(self, how, what):
