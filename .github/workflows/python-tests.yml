@@ -1,23 +1,22 @@
-# This workflow will install Python dependencies, run tests and lint with a single version of Python
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
-
-name: Backend Tests
+name: CI/CD Pipeline
 
 on:
   push:
     branches: [ "main" ]
-    # Solo se dispara si hay cambios en la carpeta del backend
     paths:
       - 'backend-isp/**'
+    tags:
+      - 'v*' # Escucha la creación de tags como v1.0...
   pull_request:
     branches: [ "main" ]
     paths:
       - 'backend-isp/**'
 
 jobs:
-  test:
+  backend-tests:
+    # Evita correr este job si lo que se subió fue un tag de versión
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/'))
     runs-on: ubuntu-latest
-
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -38,3 +37,37 @@ jobs:
       run: |
         cd backend-isp
         PYTHONPATH=. pytest tests/
+
+  deploy-and-e2e:
+    # Se ejecuta solo si la referencia es un tag
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Simulate Production Deployment
+      run: |
+        echo "=========================================================="
+        echo "🚀 DEPLOY SIMULADO: El proyecto se ha desplegado con éxito."
+        echo "=========================================================="
+
+    - name: Install E2E dependencies
+      run: |
+        python -m pip install --upgrade pip
+        # Nos movemos a la carpeta donde está el requirements.txt de tus tests
+        cd tests_endtoend
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+    - name: Run End-to-End Tests
+      run: |
+        echo "🤖 Iniciando pruebas End-to-End en entorno Headless..."
+        # Ejecutamos apuntando a la subcarpeta 'search' que se ve en tu árbol de directorios
+        python tests_endtoend/search/SearchExitingCodeShowArticle.py
+        python tests_endtoend/search/SearchInvalidCodeShowError.py
+        python tests_endtoend/search/SearchMissingCodeShowNotFound.py
