@@ -24,13 +24,14 @@ if not exist "venv" (
 :: 3. Activar el entorno virtual
 call venv\Scripts\activate
 
-:: 4. Actualizar pip e instalar Selenium 4 de forma explícita
+:: 4. Actualizar pip e instalar Selenium y dependencias
 echo [INFO] Instalando dependencias necesarias...
 python -m pip install --upgrade pip >nul 2>&1
-python -m pip install "selenium>=4.0.0" webdriver-manager >nul 2>&1
 
 if exist "requirements.txt" (
     python -m pip install -r requirements.txt >nul 2>&1
+) else (
+    python -m pip install "selenium>=4.0.0" webdriver-manager >nul 2>&1
 )
 
 echo ====================================================
@@ -38,13 +39,12 @@ echo  EJECUTANDO PRUEBAS END TO END
 echo ====================================================
 echo.
 
-:: Ejecución normal (sin -v, solo mostrará . F o E)
-if exist "SearchTest" (
-    python -m unittest discover -s SearchTest -p "*.py"
+:: Detectamos la estructura real e invocamos unittest discover
+if exist "search" (
+    python -m unittest discover -s search -p "Search*.py" -v
 ) else (
-    for %%f in (Search*.py) do (
-        python "%%f"
-    )
+    echo [ERROR] No se encontro la carpeta 'search' con los tests.
+    echo Asegurate de ejecutar este .bat desde la carpeta madre 'tests_endtoend'.
 )
 
 echo.

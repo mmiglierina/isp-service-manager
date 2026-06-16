@@ -1,0 +1,36 @@
+name: Backend Unit Tests
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'backend-isp/**'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'backend-isp/**'
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        cd backend-isp
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        pip install pytest pytest-asyncio httpx
+
+    - name: Run tests with pytest
+      run: |
+        cd backend-isp
+        PYTHONPATH=. pytest tests/

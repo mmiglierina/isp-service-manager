@@ -2,6 +2,9 @@
 # GITIGNORE UNIFICADO (ISP SERVICE MANAGER)
 # ====================================================================
 
+# Test end to end
+**/.wdm
+
 # Archivos de configuración de entorno (Ignora en cualquier carpeta)
 **/.env
 **/.env.*

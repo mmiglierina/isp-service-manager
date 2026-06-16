@@ -1,0 +1,83 @@
+name: Production End-to-End Tests
+
+on:
+  push:
+    tags:
+      - 'v*' # Se ejecuta al crear etiquetas estilo v0.1, v1.0, etc.
+
+jobs:
+  deploy-and-e2e:
+    runs-on: ubuntu-latest
+
+    # 1. Levantamos la base de datos PostgreSQL real que necesita el Backend
+    services:
+      postgres-db:
+        image: postgres:15
+        env:
+          POSTGRES_DB: ${{ secrets.TEST_DB_NAME || 'isp_gestion' }}
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+
+    # 2. Instalación de todas las dependencias del proyecto de forma estructurada
+    - name: Install All Dependencies (Apps + Tests)
+      run: |
+        python -m pip install --upgrade pip
+        
+        if [ -f backend-isp/requirements.txt ]; then pip install -r backend-isp/requirements.txt; fi
+        if [ -f frontend-isp/requirements.txt ]; then pip install -r frontend-isp/requirements.txt; fi
+        if [ -f tests_endtoend/requirements.txt ]; then pip install -r tests_endtoend/requirements.txt; fi
+
+    # 3. Lanzamiento de servicios en segundo plano con inyección de variables de entorno
+    - name: Start Services in Background
+      env:
+        # === VARIABLES DEL BACKEND (FastAPI) ===
+        SECRET_KEY: ${{ secrets.JWT_SECRET_KEY || 'ci_test_secret_key_123' }}
+        ALGORITHM: "HS256"
+        ACCESS_TOKEN_EXPIRE_MINUTES: "30"
+        DATABASE_URL: "postgresql://postgres:${{ secrets.TEST_DB_PASSWORD }}@127.0.0.1:5432/${{ secrets.TEST_DB_NAME || 'isp_gestion' }}"
+
+        # === VARIABLES DEL FRONTEND (Flask) ===
+        FLASK_DEBUG: "False" # Desactivado en el entorno de pruebas de CI para evitar hilos basura
+        FLASK_SECRET_KEY: ${{ secrets.FLASK_SECRET_KEY || 'ci_flask_secret_key_fallback_456' }}
+        FASTAPI_BASE_URL: "http://127.0.0.1:8000"
+      run: |
+        echo "⚡ Iniciando API de FastAPI (Backend)..."
+        cd backend-isp
+        # Si tenés migraciones podés meter acá un: python init_db.py o alembic upgrade head
+        uvicorn app.main:app --port 8000 > /dev/null 2>&1 &
+        cd ..
+        
+        echo "⚡ Iniciando Server de Flask (Frontend)..."
+        # Levantamos la app de Flask en el puerto 5000
+        python app.py --port 5000 > /dev/null 2>&1 &
+        
+        # Espera de seguridad crucial de 5 segundos para que los puertos abran con éxito
+        sleep 5
+
+    # 4. Ejecución automatizada de Selenium
+    - name: Run End-to-End Tests
+      env:
+        GITHUB_ACTIONS: 'true'
+        FRONTEND_URL: "http://127.0.0.1:5000"
+        BACKEND_URL: "http://127.0.0.1:8000"
+      run: |
+        echo "🤖 Ejecutando Selenium en modo invisible (Headless)..."
+        # unittest discover busca y corre dinámicamente todos los archivos Search*.py
+        python -m unittest discover -s tests_endtoend/search -p "Search*.py" -v
