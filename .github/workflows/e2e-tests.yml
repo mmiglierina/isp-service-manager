@@ -60,13 +60,14 @@ jobs:
       run: |
         echo "⚡ Iniciando API de FastAPI (Backend)..."
         cd backend-isp
-        # Si tenés migraciones podés meter acá un: python init_db.py o alembic upgrade head
         uvicorn app.main:app --port 8000 > /dev/null 2>&1 &
         cd ..
         
         echo "⚡ Iniciando Server de Flask (Frontend)..."
         # Levantamos la app de Flask en el puerto 5000
+        cd frontend-isp
         python app.py --port 5000 > /dev/null 2>&1 &
+        cd ..
         
         # Espera de seguridad crucial de 5 segundos para que los puertos abran con éxito
         sleep 5
