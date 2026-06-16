@@ -18,7 +18,8 @@ class SearchInvalidUUIDShowError(BaseSeleniumTest):
 
         # 2. Localizar el campo de entrada UUID por su atributo 'name' o clase
         uuid_input = driver.find_element(By.NAME, "uuid")
-        uuid_input.click()
+        #uuid_input.click()
+        self.driver.execute_script("arguments[0].click();", uuid_input)
         uuid_input.clear()
 
         # Colocamos un UUID inexistente o erróneo
