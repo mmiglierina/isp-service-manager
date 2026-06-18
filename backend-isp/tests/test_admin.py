@@ -9,6 +9,7 @@ from app.internal.models import Tramite, TipoTramite, EstadoTramite
 async def test_listar_todos_los_tramites(admin_client, db_session):
     """Verifica que el admin pueda listar todos los trámites sin filtros."""
 
+    # Hace este test por separado, Probar una parte de red mockeando los servicios, y otra en logica de negocio.
     # ARRANGE: Poblamos la base de datos de test
     tramite_1 = Tramite(
         uuid=uuid4(), tipo=TipoTramite.ALTA, dni="11223344",
