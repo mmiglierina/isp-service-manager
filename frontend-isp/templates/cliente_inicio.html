@@ -1,23 +1,36 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="row my-5 text-center">
-    <h1>¿Qué trámite deseas realizar?</h1>
-    <div class="col-md-6 my-3">
-        <div class="card p-4 shadow-sm">
-            <h3>Alta de Servicio</h3>
-            <p>Contratá internet de forma rápida adjuntando tus datos.</p>
-            <a href="/alta" class="btn btn-primary btn-lg">Iniciar Alta</a>
-        </div>
+<div class="position-relative my-5">
+
+    {% if es_admin %}
+    <div class="position-absolute top-0 end-0">
+        <a href="/hidden-admin-portal" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-shield-lock"></i> Acceso Admin
+        </a>
     </div>
-    <div class="col-md-6 my-3">
-        <div class="card p-4 shadow-sm">
-            <h3>Baja de Servicio</h3>
-            <p>Solicitá la baja del servicio e ingresá tu última factura.</p>
-            <a href="/baja" class="btn btn-danger btn-lg">Solicitar Baja</a>
+    {% endif %}
+
+    <div class="row text-center pt-4">
+        <h1>¿Qué trámite deseas realizar?</h1>
+        <div class="col-md-6 my-3">
+            <div class="card p-4 shadow-sm">
+                <h3>Alta de Servicio</h3>
+                <p>Contratá internet de forma rápida adjuntando tus datos.</p>
+                <a href="/alta" class="btn btn-primary btn-lg">Iniciar Alta</a>
+            </div>
+        </div>
+        <div class="col-md-6 my-3">
+            <div class="card p-4 shadow-sm">
+                <h3>Baja de Servicio</h3>
+                <p>Solicitá la baja del servicio e ingresá tu última factura.</p>
+                <a href="/baja" class="btn btn-danger btn-lg">Solicitar Baja</a>
+            </div>
         </div>
     </div>
 </div>
+
 <hr>
+
 <div class="row justify-content-center m-4">
     <div class="col-md-6">
         <div class="card p-4 bg-white shadow-sm">

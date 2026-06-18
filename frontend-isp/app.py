@@ -15,6 +15,10 @@ from services import (
     FASTAPI_BASE_URL
 )
 
+# 2. Importamos flags
+from statsig_service import init_statsig, es_administrador_por_ip
+init_statsig()
+
 load_dotenv()
 
 app = Flask(__name__)
@@ -31,7 +35,10 @@ SESSION_TOKEN = None
 # ====================================================================
 @app.route('/')
 def index():
-    return render_template('cliente_inicio.html')
+    # Evaluamos con Statsig si la IP califica como admin
+    es_admin = es_administrador_por_ip()
+
+    return render_template('cliente_inicio.html', es_admin=es_admin)
 
 @app.route('/alta', methods=['GET', 'POST'])
 def request_service_activation():
